@@ -55,6 +55,39 @@ class ImageLoader:
 
     def __load_nonraw_image(self):
         img=cv2.imread(self.info.path, cv2.IMREAD_UNCHANGED)
-        #print(img.dtype)
-        #self.img_dtype=img.dtype
+        self.img_dtype=img.dtype
         return img
+
+class Normalizer:
+    def __init__(self, info: ImageInfo, img, image_loader: ImageLoader):
+        #self.info = info
+        self.image_loader=image_loader
+        self.img=img
+        #self.scaled_imaged=
+
+    def scaling_01(self):
+        if self.image_loader.img_dtype==np.uint16:
+            return (self.img / 65535.0).astype(np.float32)
+        else:
+            return (self.img /255).astype(np.float32)
+
+    def scaling_11(self):
+        if self.image_loader.img_dtype==np.uint16:
+            return ((self.img / 65535.0) * 2.0 - 1.0).astype(np.float32)
+        else:
+            return (self.img / 127.5 - 1).astype(np.float32)
+
+    def back_scaler(self):
+        if self.image_loader.img_dtype==np.uint16:
+            if self.img.min() >= 0:
+                return (self.img * 65535.0).astype(np.uint16)
+            else:
+                return ((self.img + 1.0 / 2.0) * 65535.0).astype(np.uint16)
+        elif self.image_loader.img_dtype==np.uint8:
+            if self.img.min() >= 0:
+                return (self.img * 255).astype(np.uint8)
+            else:
+                return ((self.img + 1.0 ) * 127.5).astype(np.uint8)
+        else:
+            raise Exception('Invalid image type')
+
