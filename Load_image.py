@@ -59,8 +59,7 @@ class ImageLoader:
         return img
 
 class Normalizer:
-    def __init__(self, info: ImageInfo, img, image_loader: ImageLoader):
-        #self.info = info
+    def __init__(self, img, image_loader: ImageLoader):
         self.image_loader=image_loader
         self.img=img
         #self.scaled_imaged=
@@ -91,3 +90,24 @@ class Normalizer:
         else:
             raise Exception('Invalid image type')
 
+class ConvertRGB2YUV:
+    def __init__(self, original_img):
+        self.original_img=original_img
+        self.converted_img_yuv=self.__rgb_to_yuv(original_img)
+
+    def __rgb_to_yuv(self,img):
+        yuv_img = cv2.cvtColor(img, cv2.COLOR_RGB2YUV)
+        self.converted_img_yuv = yuv_img[..., 0:1]
+        return self.converted_img_yuv
+
+class ConvertYUV2RGB:
+    def __init__(self, original_img_rgb, y_image):
+        self.original_img=original_img_rgb
+        self.y_image=y_image
+        self.converted_img_rgb=self.__yuv_to_rgb(original_img_rgb)
+
+    def __yuv_to_rgb(self, img):
+        original_yuv=cv2.cvtColor(img, cv2.COLOR_RGB2YUV)
+        original_yuv[..., 0:1]=self.y_image
+        self.converted_img_rgb=cv2.cvtColor(original_yuv, cv2.COLOR_YUV2RGB)
+        return np.clip(self.converted_img_rgb, 0.0, 1.0)
