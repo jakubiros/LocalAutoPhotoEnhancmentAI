@@ -32,7 +32,6 @@ class ImageInfo:
         else:
             return None
 
-
 class ImageLoader:
     def __init__(self, info: ImageInfo):
         self.info = info
@@ -79,14 +78,14 @@ class Normalizer:
     def back_scaler(self):
         if self.image_loader.img_dtype==np.uint16:
             if self.img.min() >= 0:
-                return (self.img * 65535.0).astype(np.uint16)
+                return (self.img * 65535.0).clip(0, 65535).astype(np.uint16)
             else:
-                return ((self.img + 1.0 / 2.0) * 65535.0).astype(np.uint16)
+                return ((self.img + 1.0 / 2.0) * 65535.0).clip(0, 65535).astype(np.uint16)
         elif self.image_loader.img_dtype==np.uint8:
             if self.img.min() >= 0:
-                return (self.img * 255).astype(np.uint8)
+                return (self.img * 255).clip(0, 255).astype(np.uint8)
             else:
-                return ((self.img + 1.0 ) * 127.5).astype(np.uint8)
+                return ((self.img + 1.0 ) * 127.5).clip(0, 255).astype(np.uint8)
         else:
             raise Exception('Invalid image type')
 
