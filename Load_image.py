@@ -35,8 +35,8 @@ class ImageInfo:
 class ImageLoader:
     def __init__(self, info: ImageInfo):
         self.info = info
+        self.img_dtype = None
         self.image=self.load_image()
-        self.img_dtype=None
 
     def load_image(self):
         if self.info.img_format=='.nef' or self.info.img_format=='.dng':
