@@ -49,6 +49,7 @@ class ImageLoader:
         img=img.postprocess(use_camera_wb=True, no_auto_bright=True, highlight_mode=rawpy.HighlightMode.Blend, fbdd_noise_reduction=rawpy.FBDDNoiseReductionMode(1),
                            output_bps=16,output_color=rawpy.ColorSpace.Adobe, chromatic_aberration=(1,1))
         img=np.array(img, np.uint16)
+        img=cv2.cvtColor(img, cv2.COLOR_BGR2RGB)
         self.img_dtype=img.dtype
         return img
 
