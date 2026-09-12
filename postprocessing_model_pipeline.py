@@ -1,0 +1,56 @@
+import numpy as np
+from load_model import KerasModelLoader, LiteRTModelLoader
+from utils import Utils
+import cv2
+
+class PostprocessingModelPipeline:
+    def __init__(self, image, patch_size=512, min_overlap=96, batch_size=16):
+        self.image = image
+        self.patch_size = patch_size
+        self.min_overlap = min_overlap
+        self.batch_size = batch_size
+        self.global_img=np.expand_dims(cv2.resize(self.image, (64,64), interpolation=cv2.INTER_AREA), axis=0)
+        self.postprocessed_image = None
+
+    def __call__(self):
+        model_loader=KerasModelLoader('/Users/jakubbiros/Documents/jupyter_notebooks/AutoImageProcessing/models/hybrid2-crop2-GAN.keras')
+        model = model_loader.load()
+
+        y_coords = Utils.get_grid_coordinates(self.image.shape[0], self.patch_size, min_overlap=self.min_overlap)
+        x_coords = Utils.get_grid_coordinates(self.image.shape[1], self.patch_size, min_overlap=self.min_overlap)
+
+        print(f"Siatka: {len(y_coords)} x {len(x_coords)} = {len(y_coords) * len(x_coords)} kafelków")
+
+        reconstructed = np.zeros_like(self.image, dtype=np.float32)
+        weight_map = np.zeros_like(self.image, dtype=np.float32)
+        hann_window = Utils.create_hann_window(self.patch_size)
+
+        patches = []
+        coords = []
+
+        for y in y_coords:
+            for x in x_coords:
+                patches.append(self.image[y:y + self.patch_size, x:x + self.patch_size, :])
+                coords.append((y, x))
+
+                if len(patches) == self.batch_size:
+                    predictions = model.predict_on_batch([np.stack(patches), self.global_img])
+
+                    for pred, (py, px) in zip(predictions, coords):
+                        reconstructed[py:py + self.patch_size, px:px + self.patch_size, :] += pred * hann_window
+                        weight_map[py:py + self.patch_size, px:px + self.patch_size, :] += hann_window
+
+                    patches.clear()
+                    coords.clear()
+
+        if patches:
+            predictions = model.predict_on_batch([np.stack(patches), self.global_img])
+
+            for pred, (py, px) in zip(predictions, coords):
+                reconstructed[py:py + self.patch_size, px:px + self.patch_size, :] += pred * hann_window
+                weight_map[py:py + self.patch_size, px:px + self.patch_size, :] += hann_window
+
+        weight_map[weight_map == 0] = 1.0
+        self.postprocessed_image = reconstructed / weight_map
+
+        return self.postprocessed_image
