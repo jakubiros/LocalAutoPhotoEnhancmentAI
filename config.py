@@ -27,3 +27,10 @@ class SystemInfo:
     def __call__(self, *args, **kwargs):
         return {'system':self.system, 'RAM_gb':self.RAM_gb, 'device':self.device}
 
+
+class PathInfo:
+    def __init__(self):
+        self.working_dir=os.getcwd()
+        self.input_dir=os.path.join(os.getcwd(), 'input')
+        self.output_dir=os.path.join(os.getcwd(), 'output')
+        self.models_dir=os.path.join(os.getcwd(), 'models')

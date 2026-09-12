@@ -11,9 +11,9 @@ class ImageInfo:
 
     def __get_image_name(self):
         if '/' in self.path:
-            return self.path.split('/')[-1]
+            return self.path.split('/')[-1].split('.')[0]
         elif '\\' in self.path:
-            return self.path.split('\\')[-1]
+            return self.path.split('\\')[-1].split('.')[0]
         else:
             raise Exception('Invalid path')
 
@@ -111,3 +111,15 @@ class ConvertYUV2RGB:
         original_yuv[..., 0:1]=self.y_image
         self.converted_img_rgb=cv2.cvtColor(original_yuv, cv2.COLOR_YUV2RGB)
         return np.clip(self.converted_img_rgb, 0.0, 1.0)
+
+class SaveImage:
+    def __init__(self, info: ImageInfo, path):
+        self.info=info
+        self.path=path
+
+    def save_image(self, img):
+        print(self.path + self.info.img_name +'_AIenhanced'+'.jpg')
+        if self.info.img_format=='.jpg':
+            cv2.imwrite(self.path+'/' + self.info.img_name +'_AIenhanced'+'.jpg', img)
+        else:
+            cv2.imwrite(self.path +'/' + self.info.img_name + '_AIenhanced' + '.png', img)
