@@ -81,7 +81,7 @@ class Normalizer:
             if self.img.min() >= 0:
                 return (self.img * 65535.0).clip(0, 65535).astype(np.uint16)
             else:
-                return ((self.img + 1.0 / 2.0) * 65535.0).clip(0, 65535).astype(np.uint16)
+                return (((self.img + 1.0) / 2.0) * 65535.0).clip(0, 65535).astype(np.uint16)
         elif self.image_loader.img_dtype==np.uint8:
             if self.img.min() >= 0:
                 return (self.img * 255).clip(0, 255).astype(np.uint8)
