@@ -51,6 +51,7 @@ class SharpenImageStandard:
 
         weight_map[weight_map == 0] = 1.0
         self.sharpened_image = reconstructed / weight_map
+        model_loader.unload()
 
         return self.sharpened_image
 
@@ -105,5 +106,6 @@ class SharpenImageRPi:
 
         weight_map[weight_map == 0] = 1.0
         self.sharpened_image = reconstructed / weight_map
+        interpreter.unload()
 
         return self.sharpened_image
