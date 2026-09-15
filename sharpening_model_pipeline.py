@@ -3,7 +3,7 @@ from load_model import KerasModelLoader, LiteRTModelLoader
 from utils import Utils, SimpleGate, LayerScale
 
 class SharpenImageStandard:
-    def __init__(self, image, patch_size=512, min_overlap=64, batch_size=16):
+    def __init__(self, image, patch_size=512, min_overlap=96, batch_size=16):
         self.image = image
         self.patch_size = patch_size
         self.min_overlap = min_overlap
@@ -51,7 +51,6 @@ class SharpenImageStandard:
 
         weight_map[weight_map == 0] = 1.0
         self.sharpened_image = reconstructed / weight_map
-        model_loader.unload()
 
         return self.sharpened_image
 
@@ -106,6 +105,5 @@ class SharpenImageRPi:
 
         weight_map[weight_map == 0] = 1.0
         self.sharpened_image = reconstructed / weight_map
-        interpreter.unload()
 
         return self.sharpened_image
