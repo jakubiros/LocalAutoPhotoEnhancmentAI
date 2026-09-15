@@ -72,7 +72,7 @@ class PostprocessingModelPipelineRpi:
         input_details = interpreter.get_input_details()
         output_details = interpreter.get_output_details()
         input_index = input_details[0]['index']
-        global_index = output_details[1]['index']
+        global_index = input_details[1]['index']
         output_index = output_details[0]['index']
 
 
@@ -87,7 +87,7 @@ class PostprocessingModelPipelineRpi:
         weight_map = np.zeros_like(self.image, dtype=np.float32)
         hann_window = Utils.create_hann_window(self.patch_size)
 
-        input_buffer = np.empty((1, self.patch_size, self.patch_size, 1), dtype=input_details[0]['dtype'])
+        input_buffer = np.empty((1, self.patch_size, self.patch_size, 3), dtype=input_details[0]['dtype'])
 
         interpreter.set_tensor(global_index, self.global_img)
 

@@ -118,8 +118,7 @@ class SaveImage:
         self.path=path
 
     def save_image(self, img):
-        print(self.path + self.info.img_name +'_AIenhanced'+'.jpg')
         if self.info.img_format=='.jpg':
-            cv2.imwrite(self.path+'/' + self.info.img_name +'_AIenhanced'+'.jpg', img)
+            cv2.imwrite(self.path+'/' + self.info.img_name +'_AI_enhanced'+'.jpg', img)
         else:
-            cv2.imwrite(self.path +'/' + self.info.img_name + '_AIenhanced' + '.png', img)
+            cv2.imwrite(self.path +'/' + self.info.img_name + '_AI_enhanced' + '.png', img)
