@@ -52,5 +52,61 @@ class PostprocessingModelPipeline:
 
         weight_map[weight_map == 0] = 1.0
         self.postprocessed_image = reconstructed / weight_map
+        model_loader.unload()
+
+        return self.postprocessed_image
+
+class PostprocessingModelPipelineRpi:
+    def __init__(self, image, patch_size=512, min_overlap=128):
+        self.image = image
+        self.patch_size = patch_size
+        self.min_overlap = min_overlap
+        self.global_img = np.expand_dims(cv2.resize(self.image, (64, 64), interpolation=cv2.INTER_AREA), axis=0)
+        self.postprocessed_image = None
+
+    def __call__(self):
+        model=LiteRTModelLoader('', num_threads=4)
+        interpreter = model.load()
+
+        input_details = interpreter.get_input_details()
+        output_details = interpreter.get_output_details()
+        input_index = input_details[0]['index']
+        global_index = output_details[1]['index']
+        output_index = output_details[0]['index']
+
+
+        y_coords = Utils.get_grid_coordinates(self.image.shape[0], self.patch_size, min_overlap=64)
+        x_coords = Utils.get_grid_coordinates(self.image.shape[1], self.patch_size, min_overlap=64)
+        total_patches = len(y_coords) * len(x_coords)
+        print(
+            f'Siatka: {len(y_coords)} w pionie x {len(x_coords)} w poziomie ='
+            f' {total_patches} kafelków')
+
+        reconstructed = np.zeros_like(self.image, dtype=np.float32)
+        weight_map = np.zeros_like(self.image, dtype=np.float32)
+        hann_window = Utils.create_hann_window(self.patch_size)
+
+        input_buffer = np.empty((1, self.patch_size, self.patch_size, 1), dtype=input_details[0]['dtype'])
+
+        interpreter.set_tensor(global_index, self.global_img)
+
+        patch_idx = 0
+        for y in y_coords:
+            for x in x_coords:
+                patch_idx += 1
+                patch = self.image[y: y + self.patch_size, x: x + self.patch_size, :]
+                input_buffer[0] = patch
+
+                interpreter.set_tensor(input_index, input_buffer)
+                interpreter.invoke()
+                pred_patch = interpreter.get_tensor(output_index)[0]
+
+                reconstructed[y: y + self.patch_size, x: x + self.patch_size, :] += (
+                        pred_patch * hann_window)
+                weight_map[y: y + self.patch_size, x: x + self.patch_size, :] += hann_window
+
+        weight_map[weight_map == 0] = 1.0
+        self.postprocessed_image = reconstructed / weight_map
+        interpreter.unload()
 
         return self.postprocessed_image
