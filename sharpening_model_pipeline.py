@@ -1,6 +1,7 @@
 import numpy as np
 from load_model import KerasModelLoader, LiteRTModelLoader
 from utils import Utils, SimpleGate, LayerScale
+from config import PathInfo
 
 class SharpenImageStandard:
     def __init__(self, image, patch_size=512, min_overlap=96, batch_size=16):
@@ -11,14 +12,14 @@ class SharpenImageStandard:
         self.sharpened_image = None
 
     def __call__(self):
-        model_loader=KerasModelLoader('/Users/jakubbiros/Documents/jupyter_notebooks/AutoImageProcessing/models/NAFNet_L-12-patch-denoise-v2.keras',
+        model_loader=KerasModelLoader(PathInfo().models_dir + '/NAFNet_L-12-patch-denoise-v2.keras',
                                       {SimpleGate:'SimpleGate', LayerScale:'LayerScale'})
         model = model_loader.load()
 
         y_coords = Utils.get_grid_coordinates(self.image.shape[0], self.patch_size, min_overlap=self.min_overlap)
         x_coords = Utils.get_grid_coordinates(self.image.shape[1], self.patch_size, min_overlap=self.min_overlap)
 
-        print(f"Siatka: {len(y_coords)} x {len(x_coords)} = {len(y_coords) * len(x_coords)} kafelków")
+        #print(f"Siatka: {len(y_coords)} x {len(x_coords)} = {len(y_coords) * len(x_coords)} kafelków")
 
         reconstructed = np.zeros_like(self.image, dtype=np.float32)
         weight_map = np.zeros_like(self.image, dtype=np.float32)
@@ -63,7 +64,7 @@ class SharpenImageRPi:
         self.sharpened_image = None
 
     def __call__(self):
-        model=LiteRTModelLoader('', num_threads=4)
+        model=LiteRTModelLoader(PathInfo().models_dir + '/NAFNet_L-12-patch-denoise-v2-512-int8.tflite', num_threads=4)
         interpreter = model.load()
 
         input_details = interpreter.get_input_details()
@@ -75,18 +76,16 @@ class SharpenImageRPi:
         y_coords = Utils.get_grid_coordinates(self.image.shape[0], self.patch_size, min_overlap=64)
         x_coords = Utils.get_grid_coordinates(self.image.shape[1], self.patch_size, min_overlap=64)
         total_patches = len(y_coords) * len(x_coords)
-        print(
-            f'Siatka: {len(y_coords)} w pionie x {len(x_coords)} w poziomie ='
-            f' {total_patches} kafelków'
-        )
+        #print(
+            #f'Siatka: {len(y_coords)} w pionie x {len(x_coords)} w poziomie ='
+            #f' {total_patches} kafelków')
 
         reconstructed = np.zeros_like(self.image, dtype=np.float32)
         weight_map = np.zeros_like(self.image, dtype=np.float32)
         hann_window = Utils.create_hann_window(self.patch_size)
 
         input_buffer = np.empty(
-            (1, self.patch_size, self.patch_size, 1), dtype=input_details[0]['dtype']
-        )
+            (1, self.patch_size, self.patch_size, 1), dtype=input_details[0]['dtype'])
 
         patch_idx = 0
         for y in y_coords:

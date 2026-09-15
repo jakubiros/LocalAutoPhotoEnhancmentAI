@@ -1,6 +1,7 @@
 import numpy as np
 from load_model import KerasModelLoader, LiteRTModelLoader
 from utils import Utils
+from config import PathInfo
 import cv2
 
 class PostprocessingModelPipeline:
@@ -13,13 +14,13 @@ class PostprocessingModelPipeline:
         self.postprocessed_image = None
 
     def __call__(self):
-        model_loader=KerasModelLoader('/Users/jakubbiros/Documents/jupyter_notebooks/AutoImageProcessing/models/hybrid2-crop2-GAN.keras')
+        model_loader=KerasModelLoader(PathInfo().models_dir + '/hybrid2-crop2-GAN.keras')
         model = model_loader.load()
 
         y_coords = Utils.get_grid_coordinates(self.image.shape[0], self.patch_size, min_overlap=self.min_overlap)
         x_coords = Utils.get_grid_coordinates(self.image.shape[1], self.patch_size, min_overlap=self.min_overlap)
 
-        print(f"Siatka: {len(y_coords)} x {len(x_coords)} = {len(y_coords) * len(x_coords)} kafelków")
+        #print(f"Siatka: {len(y_coords)} x {len(x_coords)} = {len(y_coords) * len(x_coords)} kafelków")
 
         reconstructed = np.zeros_like(self.image, dtype=np.float32)
         weight_map = np.zeros_like(self.image, dtype=np.float32)
@@ -65,7 +66,7 @@ class PostprocessingModelPipelineRpi:
         self.postprocessed_image = None
 
     def __call__(self):
-        model=LiteRTModelLoader('', num_threads=4)
+        model=LiteRTModelLoader(PathInfo().models_dir + '/hybrid2-crop2-GAN_512-int8.tflite', num_threads=4)
         interpreter = model.load()
 
         input_details = interpreter.get_input_details()
@@ -78,9 +79,9 @@ class PostprocessingModelPipelineRpi:
         y_coords = Utils.get_grid_coordinates(self.image.shape[0], self.patch_size, min_overlap=64)
         x_coords = Utils.get_grid_coordinates(self.image.shape[1], self.patch_size, min_overlap=64)
         total_patches = len(y_coords) * len(x_coords)
-        print(
-            f'Siatka: {len(y_coords)} w pionie x {len(x_coords)} w poziomie ='
-            f' {total_patches} kafelków')
+        #print(
+            #f'Siatka: {len(y_coords)} w pionie x {len(x_coords)} w poziomie ='
+            #f' {total_patches} kafelków')
 
         reconstructed = np.zeros_like(self.image, dtype=np.float32)
         weight_map = np.zeros_like(self.image, dtype=np.float32)
