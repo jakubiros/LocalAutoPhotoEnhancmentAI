@@ -1,0 +1,67 @@
+       <!DOCTYPE html>
+       <html lang="pl">
+       <head>
+           <meta name="viewport" content="width=device-width, initial-scale=1">
+           <title>Enhance AI Studio</title>
+           <style>
+               body { font-family: system-ui, -apple-system, sans-serif; background: #121212; color: #e0e0e0; padding: 16px; margin: 0; }
+               .card { background: #1e1e1e; border-radius: 12px; padding: 20px; margin-bottom: 16px; box-shadow: 0 4px 10px rgba(0,0,0,0.4); }
+               h2, h3 { margin-top: 0; color: #00e676; }
+               input[type=file] { margin: 15px 0; width: 100%; }
+               button { background: #00e676; color: #121212; font-weight: bold; border: none; padding: 12px; border-radius: 8px; width: 100%; font-size: 15px; cursor: pointer; }
+               button.secondary { background: #333; color: #fff; margin-top: 8px; }
+               .photo-item { display: flex; justify-content: space-between; align-items: center; background: #292929; padding: 10px 14px; border-radius: 6px; margin-bottom: 8px; }
+               a { color: #00e676; text-decoration: none; font-weight: 500; }
+           </style>
+       </head>
+       <body>
+           <div class="card">
+               <h2>Photo Enhance AI (RPi 5)</h2>
+               <form id="upForm">
+                   <input type="file" id="files" multiple accept=".arw,.cr2,.cr3,.nef,.dng,.jpg,.png" required />
+                   <button type="submit" id="btn">Upload and process</button>
+               </form>
+               <p id="msg" style="font-size: 13px; color: #aaa;"></p>
+           </div>
+
+           <div class="card">
+               <h3>Ready to download</h3>
+               <button class="secondary" onclick="loadPhotos()">Refresh list</button>
+               <a href="/api/download-all-zip" style="display:block; margin: 12px 0 16px 0; text-align: center; font-weight: bold;">
+                   Save all as ZIP
+               </a>
+               <div id="list"></div>
+           </div>
+
+           <script>
+               const form = document.getElementById('upForm');
+               form.onsubmit = async (e) => {
+                   e.preventDefault();
+                   const files = document.getElementById('files').files;
+                   const fd = new FormData();
+                   for(let f of files) fd.append('files', f);
+
+                   document.getElementById('msg').innerText = "Uploading...";
+                   let res = await fetch('/api/upload', { method: 'POST', body: fd });
+                   let data = await res.json();
+                   document.getElementById('msg').innerText = `Uploaded ${data.count} photos. Postprocessing in background...`;
+                   form.reset();
+                   setTimeout(loadPhotos, 3000);
+               };
+
+               async function loadPhotos() {
+                   let res = await fetch('/api/results');
+                   let data = await res.json();
+                   let box = document.getElementById('list');
+                   box.innerHTML = data.files.length ? '' : '<p style="color:#777">No processed photos</p>';
+                   data.files.forEach(name => {
+                       let div = document.createElement('div');
+                       div.className = 'photo-item';
+                       div.innerHTML = `<span>${name}</span><a href="/api/download/${name}" download>Download</a>`;
+                       box.appendChild(div);
+                   });
+               }
+               loadPhotos();
+           </script>
+       </body>
+       </html>
