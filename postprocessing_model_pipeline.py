@@ -72,12 +72,14 @@ class PostprocessingModelPipelineRpi:
         input_details = interpreter.get_input_details()
         output_details = interpreter.get_output_details()
         input_index = input_details[0]['index']
-        global_index = input_details[1]['index']
+        if len(input_details) == 2:
+            global_index = input_details[1]['index']
+            interpreter.set_tensor(global_index, self.global_img)
         output_index = output_details[0]['index']
 
 
-        y_coords = Utils.get_grid_coordinates(self.image.shape[0], self.patch_size, min_overlap=64)
-        x_coords = Utils.get_grid_coordinates(self.image.shape[1], self.patch_size, min_overlap=64)
+        y_coords = Utils.get_grid_coordinates(self.image.shape[0], self.patch_size, min_overlap=self.min_overlap)
+        x_coords = Utils.get_grid_coordinates(self.image.shape[1], self.patch_size, min_overlap=self.min_overlap)
         total_patches = len(y_coords) * len(x_coords)
         #print(
             #f'Siatka: {len(y_coords)} w pionie x {len(x_coords)} w poziomie ='
@@ -89,7 +91,7 @@ class PostprocessingModelPipelineRpi:
 
         input_buffer = np.empty((1, self.patch_size, self.patch_size, 3), dtype=input_details[0]['dtype'])
 
-        interpreter.set_tensor(global_index, self.global_img)
+        #interpreter.set_tensor(global_index, self.global_img)
 
         patch_idx = 0
         for y in y_coords:
@@ -108,6 +110,6 @@ class PostprocessingModelPipelineRpi:
 
         weight_map[weight_map == 0] = 1.0
         self.postprocessed_image = reconstructed / weight_map
-        interpreter.unload()
+        model.unload()
 
         return self.postprocessed_image
