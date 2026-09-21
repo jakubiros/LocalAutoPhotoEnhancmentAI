@@ -1,4 +1,5 @@
 import numpy as np
+import cv2
 import tensorflow as tf
 from tensorflow.keras.layers import Layer
 
@@ -21,6 +22,12 @@ class Utils:
         )
         step = (image_dim - patch_size) / (n_patches - 1)
         return [int(round(i * step)) for i in range(n_patches)]
+
+    @staticmethod
+    def layer_threshold(img1, img2, alpha):
+        beta = (1.0 - alpha)
+        result = cv2.addWeighted(img1, alpha, img2, beta, 0.0)
+        return result
 
 @tf.keras.utils.register_keras_serializable(package='Custom', name='SimpleGate')
 class SimpleGate(Layer):
