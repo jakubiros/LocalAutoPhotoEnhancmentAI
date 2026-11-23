@@ -1,17 +1,21 @@
 import os
 import argparse
 import uvicorn
+import time
 from pathlib import Path
 from Load_image import *
 from config import *
 from sharpening_model_pipeline import *
 from postprocessing_model_pipeline import *
+from denoise_model_pipeline import *
+from utils import Utils
 
 from server import create_app
 
 
 def process_single_image(img_path: str, output_dir: str, device_type: str):
     print(f"-> Starting postprocessing: {img_path}")
+    t_start=time.time()
 
     img_info = ImageInfo(img_path)
     loading_img = ImageLoader(img_info)
@@ -31,7 +35,9 @@ def process_single_image(img_path: str, output_dir: str, device_type: str):
     temp = Normalizer(sharpened_rgb.converted_img_rgb, loading_img)
     temp_im = temp.back_scaler()
 
-    temp2 = Normalizer(temp_im, loading_img)
+    mixed_sharpened=Utils.layer_threshold(temp_im, loading_img.image, 0.75)
+
+    temp2 = Normalizer(mixed_sharpened, loading_img)
     temp_im2 = temp2.scaling_11()
 
     if device_type == 'rpi5':
@@ -44,8 +50,25 @@ def process_single_image(img_path: str, output_dir: str, device_type: str):
     final = Normalizer(postprocessed_im, loading_img)
     final_im = final.back_scaler()
 
-    SaveImage(img_info, output_dir).save_image(final_im)
-    print(f"<- Finished: {img_info.img_name}")
+    temp3 = Normalizer(final_im, loading_img)
+    temp_im3 = temp3.scaling_01()
+
+    if device_type == 'rpi5':
+        denoise=DenoiseImageRPi(temp_im3, patch_size=512, min_overlap=32)
+        denoised=denoise()
+    else:
+        denoise=DenoiseModelPipeline(temp_im3, patch_size=512, min_overlap=64)
+        denoised=denoise()
+
+    full_img=Normalizer(denoised, loading_img)
+    full_img_final=full_img.back_scaler()
+
+    mixed=Utils.layer_threshold(full_img_final, final_im, 0.75)
+
+    SaveImage(img_info, output_dir).save_image(mixed)
+
+    t_end=time.time()
+    print(f"<- Finished: {img_info.img_name} in {t_end-t_start:.2f} seconds")
 
 
 def run_local_batch(input_dir: str, output_dir: str, device_type: str):
