@@ -29,6 +29,12 @@ class ImageInfo:
             return '.dng'
         elif ext.endswith(('.tif', 'TIFF')):
             return '.tif'
+        elif ext.endswith(('.ARW', '.arw')):
+            return '.arw'
+        elif ext.endswith(('.CR2', '.cr2')):
+            return '.cr2'
+        elif ext.endswith(('.CR3', '.cr3')):
+            return '.cr3'
         else:
             return None
 
@@ -39,7 +45,7 @@ class ImageLoader:
         self.image=self.load_image()
 
     def load_image(self):
-        if self.info.img_format=='.nef' or self.info.img_format=='.dng':
+        if self.info.img_format=='.nef' or self.info.img_format=='.dng' or self.info.img_format=='.arw' or self.info.img_format=='.cr2' or self.info.img_format=='.cr3':
             return self.__load_raw_image()
         else:
             return self.__load_nonraw_image()
@@ -78,12 +84,12 @@ class Normalizer:
 
     def back_scaler(self):
         if self.image_loader.img_dtype==np.uint16:
-            if self.img.min() >= 0:
+            if self.img.min() >= -0.1:
                 return (self.img * 65535.0).clip(0, 65535).astype(np.uint16)
             else:
                 return (((self.img + 1.0) / 2.0) * 65535.0).clip(0, 65535).astype(np.uint16)
         elif self.image_loader.img_dtype==np.uint8:
-            if self.img.min() >= 0:
+            if self.img.min() >= -0.1:
                 return (self.img * 255).clip(0, 255).astype(np.uint8)
             else:
                 return ((self.img + 1.0 ) * 127.5).clip(0, 255).astype(np.uint8)
