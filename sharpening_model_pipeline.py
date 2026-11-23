@@ -12,7 +12,7 @@ class SharpenImageStandard:
         self.sharpened_image = None
 
     def __call__(self):
-        model_loader=KerasModelLoader(PathInfo().models_dir + '/NAFNet_L-12-patch-denoise-v2.keras',
+        model_loader=KerasModelLoader(PathInfo().models_dir + '/NAFNet_L-16-patch-denoise-hybrid-v3.keras',
                                       {SimpleGate:'SimpleGate', LayerScale:'LayerScale'})
         model = model_loader.load()
 
@@ -64,7 +64,7 @@ class SharpenImageRPi:
         self.sharpened_image = None
 
     def __call__(self):
-        model=LiteRTModelLoader(PathInfo().models_dir + '/NAFNet_L-12-patch-denoise-v2-512-int8.tflite', num_threads=4)
+        model=LiteRTModelLoader(PathInfo().models_dir + '/NAFNet_L-16-patch-denoise-hybrid-v2-512-int8.tflite', num_threads=4)
         interpreter = model.load()
 
         input_details = interpreter.get_input_details()
@@ -73,8 +73,8 @@ class SharpenImageRPi:
         output_index = output_details[0]['index']
 
 
-        y_coords = Utils.get_grid_coordinates(self.image.shape[0], self.patch_size, min_overlap=64)
-        x_coords = Utils.get_grid_coordinates(self.image.shape[1], self.patch_size, min_overlap=64)
+        y_coords = Utils.get_grid_coordinates(self.image.shape[0], self.patch_size, min_overlap=self.min_overlap)
+        x_coords = Utils.get_grid_coordinates(self.image.shape[1], self.patch_size, min_overlap=self.min_overlap)
         total_patches = len(y_coords) * len(x_coords)
         #print(
             #f'Siatka: {len(y_coords)} w pionie x {len(x_coords)} w poziomie ='

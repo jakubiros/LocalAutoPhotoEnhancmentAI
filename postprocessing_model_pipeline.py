@@ -5,16 +5,16 @@ from config import PathInfo
 import cv2
 
 class PostprocessingModelPipeline:
-    def __init__(self, image, patch_size=512, min_overlap=96, batch_size=16):
+    def __init__(self, image, patch_size=512, min_overlap=128, batch_size=16):
         self.image = image
         self.patch_size = patch_size
         self.min_overlap = min_overlap
         self.batch_size = batch_size
-        self.global_img=np.expand_dims(cv2.resize(self.image, (64,64), interpolation=cv2.INTER_AREA), axis=0)
+        #self.global_img=np.expand_dims(cv2.resize(self.image, (64,64), interpolation=cv2.INTER_AREA), axis=0)
         self.postprocessed_image = None
 
     def __call__(self):
-        model_loader=KerasModelLoader(PathInfo().models_dir + '/hybrid2-crop2-GAN.keras')
+        model_loader=KerasModelLoader(PathInfo().models_dir + '/PPhybrid-7-noguide-deep-patch-v2.keras')
         model = model_loader.load()
 
         y_coords = Utils.get_grid_coordinates(self.image.shape[0], self.patch_size, min_overlap=self.min_overlap)
@@ -35,7 +35,7 @@ class PostprocessingModelPipeline:
                 coords.append((y, x))
 
                 if len(patches) == self.batch_size:
-                    predictions = model.predict_on_batch([np.stack(patches), self.global_img])
+                    predictions = model.predict_on_batch(np.stack(patches))
 
                     for pred, (py, px) in zip(predictions, coords):
                         reconstructed[py:py + self.patch_size, px:px + self.patch_size, :] += pred * hann_window
@@ -45,7 +45,7 @@ class PostprocessingModelPipeline:
                     coords.clear()
 
         if patches:
-            predictions = model.predict_on_batch([np.stack(patches), self.global_img])
+            predictions = model.predict_on_batch(np.stack(patches))
 
             for pred, (py, px) in zip(predictions, coords):
                 reconstructed[py:py + self.patch_size, px:px + self.patch_size, :] += pred * hann_window
@@ -66,7 +66,7 @@ class PostprocessingModelPipelineRpi:
         self.postprocessed_image = None
 
     def __call__(self):
-        model=LiteRTModelLoader(PathInfo().models_dir + '/hybrid2-crop2-GAN_512-int8.tflite', num_threads=4)
+        model=LiteRTModelLoader(PathInfo().models_dir + '/PPhybrid-7-noguide-deep-patch-v2-int8.tflite', num_threads=4)
         interpreter = model.load()
 
         input_details = interpreter.get_input_details()
